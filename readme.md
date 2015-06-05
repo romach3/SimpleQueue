@@ -11,11 +11,11 @@
 
 ``sudo apt-get install beanstalkd``
 
-Сервер очередей, во круг которого всё и крутится.
+Сервер очередей, вокруг которого всё и крутится.
 
-[http://kr.github.io/beanstalkd/](beanstalkd) - сервер
+[beanstalkd](http://kr.github.io/beanstalkd/) - сервер
 
-[https://github.com/pda/pheanstalk](pda/pheanstalk) - php-пакет для работы с ним
+[pda/pheanstalk](https://github.com/pda/pheanstalk) - php-пакет для работы с ним
 
 ### Supervisor
  
@@ -45,7 +45,7 @@ stdout_capture_maxbytes=1MB
 * ``supervisorctl update`` что бы перечитать конфигурацию.
 * ``supervisorctl restart simple``
 
-[http://supervisord.org/](supervisord.org)
+[supervisord.org](http://supervisord.org/)
 
 ## Использование
 
