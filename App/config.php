@@ -1,7 +1,7 @@
 <?php return [
-    'balancer' => [
+    'thread' => [
         'enabled' => false,
-        'streams' => 4,
+        'threads' => 4,
         'tubes' => ['SimpleQueueTube']
     ],
     'tubes' => ['SimpleQueueTube'],

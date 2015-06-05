@@ -8,8 +8,8 @@ class Push {
             'class' => $className,
             'data' => $data
         ]);
-        $balancer = new Balancer();
-        $tube = $balancer->getTubeName($tube);
+        $thread = new Thread();
+        $tube = $thread->getTubeName($tube);
         $pheanstalk = Pheanstalk::get();
         $pheanstalk
             ->useTube($tube)

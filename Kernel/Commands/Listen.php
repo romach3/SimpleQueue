@@ -1,7 +1,7 @@
 <?php namespace Kernel\Commands;
 
 use Kernel\Helpers;
-use Kernel\Queue\Balancer;
+use Kernel\Queue\Thread;
 use Kernel\Queue\Config;
 use Kernel\Queue\Pheanstalk;
 use Symfony\Component\Process\Process;
@@ -14,15 +14,15 @@ class Listen {
     }
 
     public function __invoke($tube = null) {
-        $balancer = new Balancer();
+        $thread = new Thread();
         $listen = [];
         if (null === $tube) {
             $tubes = Config::get('tubes', []);
             foreach($tubes as $tube) {
-                $listen = array_merge($listen, $balancer->getListenTubes($tube));
+                $listen = array_merge($listen, $thread->getListenTubes($tube));
             }
         } else {
-            $listen = $balancer->getListenTubes($tube);
+            $listen = $thread->getListenTubes($tube);
         }
         $processes = [];
         while(true) {

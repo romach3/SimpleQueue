@@ -2,7 +2,7 @@
 
 use Pheanstalk\Exception\ServerException;
 
-class Balancer {
+class Thread {
     protected $pheanstalk;
 
     public function __construct() {
@@ -10,18 +10,18 @@ class Balancer {
     }
 
     public function getTubeName($tube) {
-        if (!Config::get('balancer.enabled', false)) {
+        if (!Config::get('thread.enabled', false)) {
             return $tube;
         }
         return $this->getTube($tube);
     }
 
     public function getListenTubes($tube) {
-        if (!Config::get('balancer.enabled', false) || !in_array($tube, Config::get('balancer.tubes', []), true)) {
+        if (!Config::get('thread.enabled', false) || !in_array($tube, Config::get('thread.tubes', []), true)) {
             return [$tube];
         }
         $response = [];
-        for ($i = 1; $i <= Config::get('balancer.streams', 4); $i++) {
+        for ($i = 1; $i <= Config::get('thread.threads', 4); $i++) {
             $response[] = $tube . '___' . $i;
         }
         return $response;
@@ -44,7 +44,7 @@ class Balancer {
         $stats = [];
         $name = $tube . '___' . 1;
         try {
-            for ($i = 1; $i <= Config::get('balancer.streams', 4); $i++) {
+            for ($i = 1; $i <= Config::get('thread.threads', 4); $i++) {
                 $name = $tube . '___' . $i;
                 $response = $this->pheanstalk->statsTube($name);
                 $stats[$name] = $response;
