@@ -2,3 +2,5 @@
 /vendor
 /node_modules
 .env
+/App/config.php
+/App/http.php
