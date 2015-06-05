@@ -11,7 +11,10 @@ class Config {
         return self::$config;
     }
 
-    public static function get($key) {
+    public static function get($key, $default = null) {
+        if (!isset(self::$config[$key])) {
+            return $default;
+        }
         return self::$config[$key];
     }
 }
