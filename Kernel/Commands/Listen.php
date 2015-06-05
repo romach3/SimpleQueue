@@ -1,31 +1,51 @@
 <?php namespace Kernel\Commands;
 
 use Kernel\Helpers;
-use Pheanstalk\Pheanstalk;
+use Kernel\Queue\Balancer;
+use Kernel\Queue\Config;
+use Kernel\Queue\Pheanstalk;
 use Symfony\Component\Process\Process;
 
 class Listen {
     protected $pheanstalk;
 
     public function __construct() {
-        $this->pheanstalk = new Pheanstalk('127.0.0.1');
+        $this->pheanstalk = Pheanstalk::get();
     }
 
-    public function __invoke($tube) {
-        while(true) {
-            $job = $this->pheanstalk
-                ->watch($tube)
-                ->ignore('default')
-                ->reserve();
-            $data = $job->getData();
-            $this->pheanstalk->delete($job);
-            $task = unserialize($data);
-            if (isset($task['class']) && isset($task['data']) && Helpers::jobExists($task['class'])) {
-                $this->start($tube, $task['class'], $task['data']);
-            } else {
-                echo 'ERROR: '.$task['class'].PHP_EOL;
+    public function __invoke($tube = null) {
+        $balancer = new Balancer();
+        $listen = [];
+        if (null === $tube) {
+            $tubes = Config::get('tubes', []);
+            foreach($tubes as $tube) {
+                $listen[] = $balancer->getListenTubes($tube);
             }
-            usleep(200);
+        } else {
+            $listen = [$balancer->getListenTubes($tube)];
+        }
+        while(true) {
+            foreach($listen as $tubes) {
+                $processes = [];
+                foreach($tubes as $tube) {
+                    $job = $this->pheanstalk
+                        ->watch($tube)
+                        ->ignore('default')
+                        ->reserve();
+                    $data = $job->getData();
+                    $this->pheanstalk->delete($job);
+                    $task = unserialize($data);
+                    if (isset($task['class']) && isset($task['data']) && Helpers::jobExists($task['class'])) {
+                        $processes[$task['class']] = $this->start($tube, $task['class'], $task['data']);
+                    } else {
+                        echo 'ERROR: ' . $task['class'] . PHP_EOL;
+                    }
+                    usleep(200);
+                }
+                foreach($processes as $class => $process) {
+                    $this->wait($process, $class);
+                }
+            }
         }
     }
 
@@ -34,7 +54,15 @@ class Listen {
         file_put_contents(__DIR__.'/../Storage/'.$filename, serialize($data));
         $process = new Process('/usr/bin/env php queue job '.$tube.' --class='.$class.' --data='.$filename);
         $process->setTimeout(3600);
-        $process->run();
+        $process->start();
+        return $process;
+
+    }
+
+    protected function wait(Process $process, $class) {
+        while ($process->isRunning()) {
+            usleep(200);
+        }
         if (!$process->isSuccessful()) {
             echo 'EXCEPTION: '.$process->getErrorOutput().PHP_EOL;
         }

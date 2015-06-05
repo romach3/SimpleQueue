@@ -2,10 +2,11 @@
 <?php require_once 'vendor/autoload.php';
 
 new \Kernel\Queue\Config();
+new \Kernel\Queue\Pheanstalk();
 
 $app = new Silly\Application();
 
-$app->command('listen tube', new \Kernel\Commands\Listen())->descriptions('Listener. Run this in background.', [
+$app->command('listen [tube]', new \Kernel\Commands\Listen())->descriptions('Listener. Run this in background.', [
     'tube'   => 'Tube name'
 ]);
 

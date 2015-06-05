@@ -1,15 +1,16 @@
 <?php namespace Kernel\Queue;
 
-use Pheanstalk\Pheanstalk;
-
 class Push {
 
     public function __construct($tube, $className, $data) {
+        new Pheanstalk();
         $task = serialize([
             'class' => $className,
             'data' => $data
         ]);
-        $pheanstalk = new Pheanstalk('127.0.0.1');
+        $balancer = new Balancer();
+        $tube = $balancer->getTubeName($tube);
+        $pheanstalk = Pheanstalk::get();
         $pheanstalk
             ->useTube($tube)
             ->put($task);
