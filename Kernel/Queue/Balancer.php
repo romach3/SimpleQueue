@@ -3,29 +3,25 @@
 use Pheanstalk\Exception\ServerException;
 
 class Balancer {
-    protected $config;
     protected $pheanstalk;
 
     public function __construct() {
-        $this->config = Config::get('balancer', [
-            'enabled' => false
-        ]);
         $this->pheanstalk = Pheanstalk::get();
     }
 
     public function getTubeName($tube) {
-        if (!$this->config['enabled']) {
+        if (!Config::get('balancer.enabled', false)) {
             return $tube;
         }
         return $this->getTube($tube);
     }
 
     public function getListenTubes($tube) {
-        if (!$this->config['enabled'] || !in_array($tube, $this->config['tubes'], true)) {
+        if (!Config::get('balancer.enabled', false) || !in_array($tube, Config::get('balancer.tubes', []), true)) {
             return [$tube];
         }
         $response = [];
-        for ($i = 1; $i <= $this->config['streams']; $i++) {
+        for ($i = 1; $i <= Config::get('balancer.streams', 4); $i++) {
             $response[] = $tube . '___' . $i;
         }
         return $response;
@@ -48,7 +44,7 @@ class Balancer {
         $stats = [];
         $name = $tube . '___' . 1;
         try {
-            for ($i = 1; $i <= $this->config['streams']; $i++) {
+            for ($i = 1; $i <= Config::get('balancer.streams', 4); $i++) {
                 $name = $tube . '___' . $i;
                 $response = $this->pheanstalk->statsTube($name);
                 $stats[$name] = $response;

@@ -4,5 +4,6 @@
         'streams' => 4,
         'tubes' => ['SimpleQueueTube']
     ],
-    'tubes' => ['SimpleQueueTube']
+    'tubes' => ['SimpleQueueTube'],
+    'pause' => 200
 ];

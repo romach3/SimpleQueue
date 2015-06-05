@@ -1,5 +1,7 @@
 <?php namespace Kernel\Queue;
 
+use Kernel\Helpers;
+
 class Config {
     protected static $config;
 
@@ -12,9 +14,6 @@ class Config {
     }
 
     public static function get($key, $default = null) {
-        if (!isset(self::$config[$key])) {
-            return $default;
-        }
-        return self::$config[$key];
+        return Helpers::array_get(self::$config, $key, $default);
     }
 }
