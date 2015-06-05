@@ -3,7 +3,9 @@
 ## Установка
 
 * Клонируйте репозиторий и выполните ``composer install``
+* Установите Beanstalkd
 * Запустите команду ``./queue listen TUBE_NAME`` в фоне.
+* Выполните команду ``./queue test``, она стартует задачу, которая добавит в лог ``App/Logs/SimpleQueueTube.log`` строку "Yeah!"
 
 ## Окружение
 
@@ -55,7 +57,7 @@ stdout_capture_maxbytes=1MB
 * App/Jobs - каталог для задач
 * App/Logs - логи выполнения задач
 * Kernel - файлы SimpleQueue
-* public - добавление задач через HTTP.
+* public/job.php - добавление задач через HTTP.
 
 ### Добавление задачи через PHP
 
@@ -98,7 +100,7 @@ new Push('SimpleQueueTube', 'SimpleJob', 'Yeah!');
 
 Затем задачу можно будет добавить в очередь выполнив запрос по адресу:
 
-``http://example.com/?tube=SimpleQueueTube&job=simple-job&another_data=value``
+``http://example.com/job.php?tube=SimpleQueueTube&job=simple-job&another_data=value``
 
 ``tube`` и ``job`` указывают на название задачи и очереди, всё остальное уйдет в данные, если это разрешено (``parameters``).
 
@@ -128,17 +130,23 @@ use Kernel\Queue\JobAbstract;
 class SimpleJob extends JobAbstract {
 
     public function start() {
+        /* Любые необходимые действия */
         $this->log($this->data);
     }
 
 }
 ```
 
+### Потоки
+
+SimpleQueue умеет работать с несколькими очередями одновременно, запуская асинхронно по одной задаче из каждой очереди
+и дожидаясь её окончания перед запуском новой. Но что если необходимо в одной очереди выполнять сразу несколько задач?
+К примеру, отправка писем при рассылке, где обработка по одному может затянуться на долгое время?
+
+В config.php задайте параметр ``thread.enabled = true``, установите количество потоков (``threads``) и перечислите
+очереди, к которым эти настройки будут применены (``tubes``). SimpleQueue создаст дополнительные очереди вида
+``tube___x``, где x - номер потока и будет их обрабатывать по отдельности.
+
 ### Логи
 
-Логи находятся в каталоге ``App/Logs``. 
-
-## Проверка работы
-
-Запустите queue:listen и выполните команду ``./queue test``, она стартует задачу,
-которая добавит в лог ``App/Logs/SimpleQueueTube.log`` строку "Yeah!".
+Логи находятся в каталоге ``App/Logs``.
