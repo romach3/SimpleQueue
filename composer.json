@@ -1,0 +1,21 @@
+{
+  "name": "romach3/simple-queue",
+  "description": "ОбРабота с очередьми",
+  "authors": [
+    {
+      "name": "romach3",
+      "email": "romach3@gmail.com"
+    }
+  ],
+  "require": {
+    "mnapoli/silly": "~1.1",
+    "pda/pheanstalk": "~3.0",
+    "symfony/process": "~2.7"
+  },
+  "autoload": {
+    "psr-4": {
+      "Kernel\\": "Kernel/",
+      "App\\": "App/"
+    }
+  }
+}

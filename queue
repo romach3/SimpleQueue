@@ -1,0 +1,14 @@
+#!/usr/bin/env php
+<?php require_once 'vendor/autoload.php';
+
+$app = new Silly\Application();
+
+$app->command('listen tube', new \Kernel\Commands\Listen())->descriptions('Listener. Run this in background.', [
+    'tube'   => 'Tube name'
+]);
+
+$app->command('job tube [--class=] [--data=]', new \Kernel\Commands\Job())->descriptions('Job. Run automatically.');
+
+$app->command('test ', new \Kernel\Commands\Test())->descriptions('Test.');
+
+$app->run();
