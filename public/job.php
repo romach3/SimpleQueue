@@ -4,15 +4,12 @@ use Kernel\Helpers;
 use Kernel\Queue\Push;
 
 $www = include '../App/http.php';
-$jobs = isset($www['jobs']) ? $www['jobs']: [];
-$tubes = isset($www['tubes']) ? $www['tubes']: [];
-$auth = isset($www['auth']) ? $www['auth'] : null;
+$jobs = Helpers::array_get($www, 'jobs', []);
+$tubes = Helpers::array_get($www, 'tubes', []);
+$auth = Helpers::array_get($www, 'auth', null);
 $data = $_GET;
-
-$job = $data['job'];
-unset($data['job']);
-$tube = $data['tube'];
-unset($data['tube']);
+$job = Helpers::array_take($data, 'job');
+$tube = Helpers::array_take($data, 'tube');
 
 if (is_callable($auth) && !$auth()) {
     header('HTTP/1.0 403 Forbidden');
