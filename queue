@@ -1,6 +1,8 @@
 #!/usr/bin/env php
 <?php require_once 'vendor/autoload.php';
 
+new \Kernel\Queue\Config();
+
 $app = new Silly\Application();
 
 $app->command('listen tube', new \Kernel\Commands\Listen())->descriptions('Listener. Run this in background.', [
