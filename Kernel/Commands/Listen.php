@@ -1,5 +1,6 @@
 <?php namespace Kernel\Commands;
 
+use Kernel\Helpers;
 use Pheanstalk\Pheanstalk;
 use Symfony\Component\Process\Process;
 
@@ -19,7 +20,7 @@ class Listen {
             $data = $job->getData();
             $this->pheanstalk->delete($job);
             $task = unserialize($data);
-            if (isset($task['class']) && isset($task['data'])) {
+            if (isset($task['class']) && isset($task['data']) && Helpers::jobExists($task['class'])) {
                 $this->start($tube, $task['class'], $task['data']);
             } else {
                 echo 'ERROR: '.$task['class'].PHP_EOL;
