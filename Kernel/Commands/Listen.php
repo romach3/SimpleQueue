@@ -28,12 +28,16 @@ class Listen {
         while(true) {
             foreach($listen as $tube) {
                 if (isset($processes[$tube]) && count($processes[$tube]) > 0) {
+                    usleep(Config::get('pause', 200));
                     continue;
                 }
                 $job = $this->pheanstalk
                     ->watch($tube)
                     ->ignore('default')
-                    ->reserve();
+                    ->reserve(1);
+                if ($job === false) {
+                    continue;
+                }
                 $data = $job->getData();
                 $this->pheanstalk->delete($job);
                 $task = unserialize($data);
@@ -42,9 +46,9 @@ class Listen {
                 } else {
                     echo 'ERROR: ' . $task['class'] . PHP_EOL;
                 }
-                usleep(200);
+                usleep(Config::get('pause', 200));
             }
-            $this->wait($processes);
+            $this->check($processes);
         }
     }
 
@@ -58,7 +62,8 @@ class Listen {
 
     }
 
-    protected function wait(&$processes) {
+    protected function check(&$processes) {
+
         foreach($processes as &$tube) {
             foreach ($tube as $class => &$process) {
                 /** @var Process $process */
