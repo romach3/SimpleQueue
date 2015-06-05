@@ -19,33 +19,32 @@ class Listen {
         if (null === $tube) {
             $tubes = Config::get('tubes', []);
             foreach($tubes as $tube) {
-                $listen[] = $balancer->getListenTubes($tube);
+                $listen = array_merge($listen, $balancer->getListenTubes($tube));
             }
         } else {
-            $listen = [$balancer->getListenTubes($tube)];
+            $listen = $balancer->getListenTubes($tube);
         }
+        $processes = [];
         while(true) {
-            foreach($listen as $tubes) {
-                $processes = [];
-                foreach($tubes as $tube) {
-                    $job = $this->pheanstalk
-                        ->watch($tube)
-                        ->ignore('default')
-                        ->reserve();
-                    $data = $job->getData();
-                    $this->pheanstalk->delete($job);
-                    $task = unserialize($data);
-                    if (isset($task['class']) && isset($task['data']) && Helpers::jobExists($task['class'])) {
-                        $processes[$task['class']] = $this->start($tube, $task['class'], $task['data']);
-                    } else {
-                        echo 'ERROR: ' . $task['class'] . PHP_EOL;
-                    }
-                    usleep(200);
+            foreach($listen as $tube) {
+                if (isset($processes[$tube]) && count($processes[$tube]) > 0) {
+                    continue;
                 }
-                foreach($processes as $class => $process) {
-                    $this->wait($process, $class);
+                $job = $this->pheanstalk
+                    ->watch($tube)
+                    ->ignore('default')
+                    ->reserve();
+                $data = $job->getData();
+                $this->pheanstalk->delete($job);
+                $task = unserialize($data);
+                if (isset($task['class']) && isset($task['data']) && Helpers::jobExists($task['class'])) {
+                    $processes[$tube][$task['class']] = $this->start($tube, $task['class'], $task['data']);
+                } else {
+                    echo 'ERROR: ' . $task['class'] . PHP_EOL;
                 }
+                usleep(200);
             }
+            $this->wait($processes);
         }
     }
 
@@ -59,14 +58,25 @@ class Listen {
 
     }
 
-    protected function wait(Process $process, $class) {
-        while ($process->isRunning()) {
-            usleep(200);
+    protected function wait(&$processes) {
+        foreach($processes as &$tube) {
+            foreach ($tube as $class => &$process) {
+                /** @var Process $process */
+                if (!$process->isRunning()) {
+                    if (!$process->isSuccessful()) {
+                        echo 'EXCEPTION: ' . $process->getErrorOutput() . PHP_EOL;
+                    }
+                    echo 'COMPLETE: ' . $class . PHP_EOL;
+                    $process = null;
+                }
+            }
+            $tube = array_filter($tube, function($process) {
+                return null !== $process;
+            });
         }
-        if (!$process->isSuccessful()) {
-            echo 'EXCEPTION: '.$process->getErrorOutput().PHP_EOL;
-        }
-        echo 'COMPLETE: '.$class.PHP_EOL;
+        $processes = array_filter($processes, function($tube) {
+            return count($tube) > 0;
+        });
     }
 
     protected function getFileName() {
